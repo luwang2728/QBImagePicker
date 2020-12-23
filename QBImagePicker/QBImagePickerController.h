@@ -14,7 +14,9 @@
 @protocol QBImagePickerControllerDelegate <NSObject>
 
 @optional
-- (void)qb_imagePickerController:(QBImagePickerController *)imagePickerController didFinishPickingAssets:(NSArray *)assets;
+- (void)qb_imagePickerController:(QBImagePickerController *)imagePickerController
+          didFinishPickingAssets:(NSArray *)assets
+                     isFullImage:(BOOL)isFullImage;
 - (void)qb_imagePickerControllerDidCancel:(QBImagePickerController *)imagePickerController;
 
 - (BOOL)qb_imagePickerController:(QBImagePickerController *)imagePickerController shouldSelectAsset:(PHAsset *)asset;
@@ -34,6 +36,7 @@ typedef NS_ENUM(NSUInteger, QBImagePickerMediaType) {
 @property (nonatomic, weak) id<QBImagePickerControllerDelegate> delegate;
 
 @property (nonatomic, strong, readonly) NSMutableOrderedSet *selectedAssets;
+@property (nonatomic) BOOL isFullImageEnabled;
 
 @property (nonatomic, copy) NSArray *assetCollectionSubtypes;
 @property (nonatomic, assign) QBImagePickerMediaType mediaType;

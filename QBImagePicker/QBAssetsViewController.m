@@ -13,6 +13,7 @@
 #import "QBImagePickerController.h"
 #import "QBAssetCell.h"
 #import "QBVideoIndicatorView.h"
+#import "MaterialButtons.h"
 
 static CGSize CGSizeScale(CGSize size, CGFloat scale) {
     return CGSizeMake(size.width * scale, size.height * scale);
@@ -57,6 +58,10 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
 @interface QBAssetsViewController () <PHPhotoLibraryChangeObserver, UICollectionViewDelegateFlowLayout>
 
 @property (nonatomic, strong) IBOutlet UIBarButtonItem *doneButton;
+@property (nonatomic, strong) MDCFlatButton *sendButton;
+@property (nonatomic, strong) UIButton *fullImageButton;
+@property (nonatomic) UIImage *uncheckedIcon;
+@property (nonatomic) UIImage *checkedIcon;
 
 @property (nonatomic, strong) PHFetchResult *fetchResult;
 
@@ -92,12 +97,9 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
     // Configure collection view
     self.collectionView.allowsMultipleSelection = self.imagePickerController.allowsMultipleSelection;
     
-    // Show/hide 'Done' button
-    if (self.imagePickerController.allowsMultipleSelection) {
-        [self.navigationItem setRightBarButtonItem:self.doneButton animated:NO];
-    } else {
-        [self.navigationItem setRightBarButtonItem:nil animated:NO];
-    }
+
+    [self.navigationItem setRightBarButtonItem:nil animated:NO];
+
     
     [self updateDoneButtonState];
     [self updateSelectionInfo];
@@ -105,12 +107,8 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
     
     // Scroll to bottom
     if (self.fetchResult.count > 0 && self.isMovingToParentViewController && !self.disableScrollToBottom) {
-        // when presenting as a .FormSheet on iPad, the frame is not correct until just after viewWillAppear:
-        // dispatching to the main thread waits one run loop until the frame is update and the layout is complete
-        dispatch_async(dispatch_get_main_queue(), ^{
-            NSIndexPath *indexPath = [NSIndexPath indexPathForItem:(self.fetchResult.count - 1) inSection:0];
-            [self.collectionView scrollToItemAtIndexPath:indexPath atScrollPosition:UICollectionViewScrollPositionTop animated:NO];
-        });
+        NSIndexPath *indexPath = [NSIndexPath indexPathForItem:(self.fetchResult.count - 1) inSection:0];
+        [self.collectionView scrollToItemAtIndexPath:indexPath atScrollPosition:UICollectionViewScrollPositionTop animated:NO];
     }
 }
 
@@ -176,34 +174,93 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
             && self.imagePickerController.maximumNumberOfSelection >= self.imagePickerController.minimumNumberOfSelection);
 }
 
+- (void)didTapDoneButton {
+  if ([self.imagePickerController.delegate respondsToSelector:@selector(qb_imagePickerController:didFinishPickingAssets:isFullImage:)]) {
+      [self.imagePickerController.delegate qb_imagePickerController:self.imagePickerController
+                                             didFinishPickingAssets:self.imagePickerController.selectedAssets.array
+                                                        isFullImage:self.imagePickerController.isFullImageEnabled];
 
+  }
+}
+
+- (void)fullImageButtonTapped {
+  if (self.imagePickerController.isFullImageEnabled) {
+    self.imagePickerController.isFullImageEnabled = NO;
+    [self.fullImageButton setImage:self.uncheckedIcon forState:UIControlStateNormal];
+  } else {
+    self.imagePickerController.isFullImageEnabled = YES;
+    [self.fullImageButton setImage:self.checkedIcon forState:UIControlStateNormal];
+  }
+}
 #pragma mark - Actions
 
-- (IBAction)done:(id)sender
-{
-    if ([self.imagePickerController.delegate respondsToSelector:@selector(qb_imagePickerController:didFinishPickingAssets:)]) {
-        [self.imagePickerController.delegate qb_imagePickerController:self.imagePickerController
-                                               didFinishPickingAssets:self.imagePickerController.selectedAssets.array];
-    }
+- (IBAction)done:(id)sender {
 }
 
 
 #pragma mark - Toolbar
 
+- (UIColor *)colorWithHexString:(NSString *)hexString {
+  return [self colorWithHexString:hexString alpha:1.0f];
+}
+
+// Assumes input like "#00FF00" (#RRGGBB)
+- (UIColor *)colorWithHexString:(NSString *)hexString alpha:(CGFloat)alpha {
+  unsigned rgbValue = 0;
+
+  NSScanner *scanner = [NSScanner scannerWithString:hexString];
+  [scanner setScanLocation:1]; // bypass '#' character
+  [scanner scanHexInt:&rgbValue];
+
+  return [UIColor colorWithRed:((rgbValue & 0xFF0000) >> 16)/255.0f
+                         green:((rgbValue & 0xFF00) >> 8)/255.0f
+                          blue:(rgbValue & 0xFF)/255.0f
+                         alpha:alpha];
+}
+
 - (void)setUpToolbarItems
 {
-    // Space
-    UIBarButtonItem *leftSpace = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:NULL];
-    UIBarButtonItem *rightSpace = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:NULL];
-    
-    // Info label
-    NSDictionary *attributes = @{ NSForegroundColorAttributeName: [UIColor blackColor] };
-    UIBarButtonItem *infoButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"" style:UIBarButtonItemStylePlain target:nil action:NULL];
-    infoButtonItem.enabled = NO;
-    [infoButtonItem setTitleTextAttributes:attributes forState:UIControlStateNormal];
-    [infoButtonItem setTitleTextAttributes:attributes forState:UIControlStateDisabled];
-    
-    self.toolbarItems = @[leftSpace, infoButtonItem, rightSpace];
+  // Space
+  UIBarButtonItem *leftSpace = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:NULL];
+  UIBarButtonItem *rightSpace = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:NULL];
+  // Show/hide 'Done' button
+  self.sendButton = [[MDCFlatButton alloc] init];
+  [self.sendButton setTitleFont:[UIFont systemFontOfSize:16 weight:UIFontWeightMedium]
+                       forState:UIControlStateNormal];
+  [self.sendButton setTitle:@"Done" forState:UIControlStateNormal];
+  self.sendButton.uppercaseTitle = NO;
+  [self.sendButton setBackgroundColor:[self colorWithHexString:@"#07C160"]
+                             forState:UIControlStateNormal];
+  [self.sendButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+  self.sendButton.clipsToBounds = YES;
+  //half of the width
+  self.sendButton.layer.cornerRadius = 5.0f;
+  [self.sendButton addTarget:self
+                      action:@selector(didTapDoneButton)
+            forControlEvents:UIControlEventTouchUpInside];
+  [self.sendButton setEnabled:NO];
+  UIBarButtonItem *sendButtonItem = [[UIBarButtonItem alloc] initWithCustomView:self.sendButton];
+
+  self.uncheckedIcon = [UIImage imageNamed:@"circle@2x.png"];
+  self.checkedIcon = [UIImage imageNamed:@"circle_check@2x.png"];
+  self.fullImageButton = [UIButton buttonWithType:UIButtonTypeCustom];
+  self.fullImageButton.backgroundColor = [UIColor clearColor];
+  [self.fullImageButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+  if (self.imagePickerController.isFullImageEnabled) {
+    [self.fullImageButton setImage:self.checkedIcon forState:UIControlStateNormal];
+  } else {
+    [self.fullImageButton setImage:self.uncheckedIcon forState:UIControlStateNormal];
+  }
+  
+  [self.fullImageButton setTitle:@" Full Image" forState:UIControlStateNormal];
+  self.fullImageButton.imageEdgeInsets = UIEdgeInsetsMake(3, 3, 3, 3);
+  self.fullImageButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
+  [self.fullImageButton addTarget:self
+                            action:@selector(fullImageButtonTapped)
+                  forControlEvents:UIControlEventTouchUpInside];
+  UIBarButtonItem *fullImageItem = [[UIBarButtonItem alloc] initWithCustomView:self.fullImageButton];
+  
+  self.toolbarItems = @[leftSpace, fullImageItem, rightSpace, sendButtonItem];
 }
 
 - (void)updateSelectionInfo
@@ -221,8 +278,14 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
         
         NSString *title = [NSString stringWithFormat:format, selectedAssets.count];
         [(UIBarButtonItem *)self.toolbarItems[1] setTitle:title];
+        [self.sendButton setTitle:[NSString stringWithFormat:@"Done(%d)", (int)selectedAssets.count] forState:UIControlStateNormal];
+        [self.sendButton sizeToFit];
+        [self.sendButton setEnabled:YES];
     } else {
         [(UIBarButtonItem *)self.toolbarItems[1] setTitle:@""];
+        [self.sendButton setTitle:@"Done" forState:UIControlStateNormal];
+        [self.sendButton sizeToFit];
+        [self.sendButton setEnabled:NO];
     }
 }
 
@@ -322,7 +385,7 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
         NSArray *assetsToStopCaching = [self assetsAtIndexPaths:removedIndexPaths];
         
         CGSize itemSize = [(UICollectionViewFlowLayout *)self.collectionViewLayout itemSize];
-        CGSize targetSize = CGSizeScale(itemSize, [[UIScreen mainScreen] scale]);
+        CGSize targetSize = CGSizeScale(itemSize, self.traitCollection.displayScale);
         
         [self.imageManager startCachingImagesForAssets:assetsToStartCaching
                                             targetSize:targetSize
@@ -451,7 +514,7 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
     // Image
     PHAsset *asset = self.fetchResult[indexPath.item];
     CGSize itemSize = [(UICollectionViewFlowLayout *)collectionView.collectionViewLayout itemSize];
-    CGSize targetSize = CGSizeScale(itemSize, [[UIScreen mainScreen] scale]);
+    CGSize targetSize = CGSizeScale(itemSize, self.traitCollection.displayScale);
     
     [self.imageManager requestImageForAsset:asset
                                  targetSize:targetSize
@@ -554,6 +617,38 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
 
 #pragma mark - UICollectionViewDelegate
 
+- (void)showAlertWithTitle:(NSString*)title
+                   message:(NSString *)message
+                 WithBlock:(void (^)(UIAlertAction *action))block {
+  UIAlertController *alert =
+      [UIAlertController alertControllerWithTitle:title
+                                          message:message
+                                   preferredStyle:UIAlertControllerStyleAlert];
+  
+  NSMutableParagraphStyle *paraStyle = [[NSMutableParagraphStyle alloc] init];
+  paraStyle.alignment = NSTextAlignmentCenter;
+  
+  UIFont *messageFont = [UIFont preferredFontForTextStyle:UIFontTextStyleBody];
+  NSDictionary *attributes =
+      @{NSParagraphStyleAttributeName:paraStyle,
+                  NSFontAttributeName:messageFont,
+       NSForegroundColorAttributeName:[UIColor blackColor]};
+  NSMutableAttributedString * atrStr =
+      [[NSMutableAttributedString alloc] initWithString:message attributes:attributes];
+  
+  [alert setValue:atrStr forKey:@"attributedMessage"];
+  
+  UIAlertAction *yesButton =
+  [UIAlertAction actionWithTitle:@"Ok"
+                           style:UIAlertActionStyleDefault
+                         handler:block];
+  [alert addAction:yesButton];
+  
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [self presentViewController:alert animated:YES completion:nil];
+  });
+}
+
 - (BOOL)collectionView:(UICollectionView *)collectionView shouldSelectItemAtIndexPath:(NSIndexPath *)indexPath
 {
     if ([self.imagePickerController.delegate respondsToSelector:@selector(qb_imagePickerController:shouldSelectAsset:)]) {
@@ -564,6 +659,10 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
     if ([self isAutoDeselectEnabled]) {
         return YES;
     }
+    
+  if ([self isMaximumSelectionLimitReached]) {
+    [self showAlertWithTitle:@"You have selected a maximum of 9 photos." message:@"" WithBlock:nil];
+  }
     
     return ![self isMaximumSelectionLimitReached];
 }
@@ -602,8 +701,10 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
             }
         }
     } else {
-        if ([imagePickerController.delegate respondsToSelector:@selector(qb_imagePickerController:didFinishPickingAssets:)]) {
-            [imagePickerController.delegate qb_imagePickerController:imagePickerController didFinishPickingAssets:@[asset]];
+      if ([imagePickerController.delegate respondsToSelector:@selector(qb_imagePickerController:didFinishPickingAssets:isFullImage:)]) {
+            [imagePickerController.delegate qb_imagePickerController:imagePickerController
+                                              didFinishPickingAssets:@[asset]
+                                                         isFullImage:self.imagePickerController.isFullImageEnabled];
         }
     }
     
@@ -662,3 +763,4 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
 }
 
 @end
+

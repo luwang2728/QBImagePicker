@@ -101,9 +101,10 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
 
 - (IBAction)done:(id)sender
 {
-    if ([self.imagePickerController.delegate respondsToSelector:@selector(qb_imagePickerController:didFinishPickingAssets:)]) {
+  if ([self.imagePickerController.delegate respondsToSelector:@selector(qb_imagePickerController:didFinishPickingAssets:isFullImage:)]) {
         [self.imagePickerController.delegate qb_imagePickerController:self.imagePickerController
-                                               didFinishPickingAssets:self.imagePickerController.selectedAssets.array];
+                                               didFinishPickingAssets:self.imagePickerController.selectedAssets.array
+                                                          isFullImage:self.imagePickerController.isFullImageEnabled];
     }
 }
 
@@ -276,7 +277,7 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
 {
     QBAlbumCell *cell = [tableView dequeueReusableCellWithIdentifier:@"AlbumCell" forIndexPath:indexPath];
     cell.tag = indexPath.row;
-    cell.borderWidth = 1.0 / [[UIScreen mainScreen] scale];
+    cell.borderWidth = 1.0 / self.traitCollection.displayScale;
     
     // Thumbnail
     PHAssetCollection *assetCollection = self.assetCollections[indexPath.row];
@@ -303,7 +304,7 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
         cell.imageView3.hidden = NO;
         
         [imageManager requestImageForAsset:fetchResult[fetchResult.count - 3]
-                                targetSize:CGSizeScale(cell.imageView3.frame.size, [[UIScreen mainScreen] scale])
+                                targetSize:CGSizeScale(cell.imageView3.frame.size, self.traitCollection.displayScale)
                                contentMode:PHImageContentModeAspectFill
                                    options:nil
                              resultHandler:^(UIImage *result, NSDictionary *info) {
@@ -319,7 +320,7 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
         cell.imageView2.hidden = NO;
         
         [imageManager requestImageForAsset:fetchResult[fetchResult.count - 2]
-                                targetSize:CGSizeScale(cell.imageView2.frame.size, [[UIScreen mainScreen] scale])
+                                targetSize:CGSizeScale(cell.imageView2.frame.size, self.traitCollection.displayScale)
                                contentMode:PHImageContentModeAspectFill
                                    options:nil
                              resultHandler:^(UIImage *result, NSDictionary *info) {
@@ -333,7 +334,7 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
     
     if (fetchResult.count >= 1) {
         [imageManager requestImageForAsset:fetchResult[fetchResult.count - 1]
-                                targetSize:CGSizeScale(cell.imageView1.frame.size, [[UIScreen mainScreen] scale])
+                                targetSize:CGSizeScale(cell.imageView1.frame.size, self.traitCollection.displayScale)
                                contentMode:PHImageContentModeAspectFill
                                    options:nil
                              resultHandler:^(UIImage *result, NSDictionary *info) {

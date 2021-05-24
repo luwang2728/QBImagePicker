@@ -13,7 +13,6 @@
 #import "QBImagePickerController.h"
 #import "QBAssetCell.h"
 #import "QBVideoIndicatorView.h"
-#import "MaterialButtons.h"
 
 static CGSize CGSizeScale(CGSize size, CGFloat scale) {
     return CGSizeMake(size.width * scale, size.height * scale);
@@ -58,7 +57,7 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
 @interface QBAssetsViewController () <PHPhotoLibraryChangeObserver, UICollectionViewDelegateFlowLayout>
 
 @property (nonatomic, strong) IBOutlet UIBarButtonItem *doneButton;
-@property (nonatomic, strong) MDCFlatButton *sendButton;
+@property (nonatomic, strong) UIButton *sendButton;
 @property (nonatomic, strong) UIButton *fullImageButton;
 @property (nonatomic) UIImage *uncheckedIcon;
 @property (nonatomic) UIImage *checkedIcon;
@@ -224,13 +223,10 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
   UIBarButtonItem *leftSpace = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:NULL];
   UIBarButtonItem *rightSpace = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:NULL];
   // Show/hide 'Done' button
-  self.sendButton = [[MDCFlatButton alloc] init];
-  [self.sendButton setTitleFont:[UIFont systemFontOfSize:16 weight:UIFontWeightMedium]
-                       forState:UIControlStateNormal];
-  [self.sendButton setTitle:@"Done" forState:UIControlStateNormal];
-  self.sendButton.uppercaseTitle = NO;
-  [self.sendButton setBackgroundColor:[self colorWithHexString:@"#07C160"]
-                             forState:UIControlStateNormal];
+  self.sendButton = [[UIButton alloc] init];
+  self.sendButton.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
+  [self.sendButton setTitle:@"  Done  " forState:UIControlStateNormal];
+  self.sendButton.backgroundColor = [self colorWithHexString:@"#07C160"];
   [self.sendButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
   self.sendButton.clipsToBounds = YES;
   //half of the width
@@ -278,12 +274,12 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
         
         NSString *title = [NSString stringWithFormat:format, selectedAssets.count];
         [(UIBarButtonItem *)self.toolbarItems[1] setTitle:title];
-        [self.sendButton setTitle:[NSString stringWithFormat:@"Done(%d)", (int)selectedAssets.count] forState:UIControlStateNormal];
+        [self.sendButton setTitle:[NSString stringWithFormat:@"  Done(%d)  ", (int)selectedAssets.count] forState:UIControlStateNormal];
         [self.sendButton sizeToFit];
         [self.sendButton setEnabled:YES];
     } else {
         [(UIBarButtonItem *)self.toolbarItems[1] setTitle:@""];
-        [self.sendButton setTitle:@"Done" forState:UIControlStateNormal];
+        [self.sendButton setTitle:@"  Done  " forState:UIControlStateNormal];
         [self.sendButton sizeToFit];
         [self.sendButton setEnabled:NO];
     }

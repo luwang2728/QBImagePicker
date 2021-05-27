@@ -237,8 +237,8 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
   [self.sendButton setEnabled:NO];
   UIBarButtonItem *sendButtonItem = [[UIBarButtonItem alloc] initWithCustomView:self.sendButton];
 
-  self.uncheckedIcon = [UIImage imageNamed:@"circle@2x.png"];
-  self.checkedIcon = [UIImage imageNamed:@"circle_check@2x.png"];
+  self.uncheckedIcon = [UIImage imageNamed:@"circle"];
+  self.checkedIcon = [UIImage imageNamed:@"circleCheck"];
   self.fullImageButton = [UIButton buttonWithType:UIButtonTypeCustom];
   self.fullImageButton.backgroundColor = [UIColor clearColor];
   [self.fullImageButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
